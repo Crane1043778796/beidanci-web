@@ -11,3 +11,19 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.ant-card:hover .delete-button {
+  opacity: 1 !important;
+}
+
+.delete-button .anticon {
+  font-size: 32px;  /* 从24px增加到32px */
+}
+
+.delete-button .ant-btn {
+  width: 50px;  /* 相应增加按钮大小 */
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

@@ -36,3 +36,312 @@
     transform: rotate(360deg);
   }
 }
+
+.main-content {
+  font-size: 25px !important;
+}
+
+/* 表格与Tab样式 */
+.main-table .ant-table,
+.main-table .ant-table-cell {
+  font-size: 25px !important;
+}
+.main-tabs .ant-tabs-tab {
+  font-size: 20px !important;
+}
+.main-table.large-header .ant-table-thead > tr > th {
+  font-size: 25px !important;
+  font-weight: 600;
+}
+.main-table .ant-table-thead > tr > th,
+.main-table .ant-table-tbody > tr > td {
+  font-size: 25px !important;
+  padding: 16px 12px;
+}
+.main-table .ant-btn {
+  font-size: 22px;
+  height: 40px;
+  border-radius: 8px;
+}
+.main-table .ant-tag {
+  font-size: 22px !important;
+  padding: 6px 12px !important;
+  height: auto;
+  line-height: 1.2;
+  border-radius: 8px;
+}
+
+/* 
+  === 搜索栏样式完美对齐 (修复 AutoComplete 版本) ===
+*/
+.search-bar-wrapper {
+  background: #f5f8ff;
+  padding: 24px 32px;
+  border-radius: 16px;
+  margin-bottom: 28px;
+  display: flex;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.search-bar {
+  width: 95%;
+  height: 50px; /* 定死高度 */
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* 左侧组合容器 */
+.custom-search-group {
+  flex: 1; 
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/* AutoComplete 组件 */
+.custom-autocomplete {
+  flex: 1;
+  height: 100%;
+  width: 100%;
+}
+
+/* 强制修改 Antd AutoComplete 内部样式 */
+.custom-autocomplete .ant-select-selector {
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  font-size: 20px !important;
+  
+  /* 去掉右侧圆角和边框，为了和搜索按钮拼接 */
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-right: 0 !important;
+  
+  padding: 0 12px !important;
+}
+
+/* 修复 AutoComplete 内部 Input 的高度和光标位置 */
+.custom-autocomplete .ant-select-selection-search {
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  left: 12px !important; 
+}
+
+.custom-autocomplete .ant-select-selection-search-input {
+  height: 100% !important;
+  font-size: 20px !important;
+}
+
+/* 搜索按钮 */
+.custom-search-btn {
+  height: 100% !important;
+  font-size: 20px !important;
+  padding: 0 32px !important;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 中间：下拉选择框 */
+.custom-select {
+  width: 220px;
+  height: 100% !important;
+}
+.custom-select .ant-select-selector {
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  border-radius: 8px !important;
+  font-size: 20px !important;
+  padding: 0 16px !important;
+}
+.custom-select .ant-select-selection-item {
+  line-height: normal !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* 右侧：新增按钮 */
+.custom-add-btn {
+  height: 100% !important;
+  font-size: 20px !important;
+  padding: 0 36px !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* === 背诵模式样式 === */
+
+/* 背诵容器 */
+.review-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* 进度条 */
+.review-progress {
+  font-size: 20px;
+  color: #888;
+  margin-bottom: 24px;
+}
+
+/* 卡片主体 */
+.review-card {
+  width: 800px;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s;
+  position: relative;
+  border: 2px solid transparent;
+}
+
+.review-card:hover {
+  transform: translateY(-5px);
+  border-color: #1890ff;
+}
+
+/* 卡片上半部分：问题区 (始终显示) */
+.card-question {
+  padding: 60px 40px;
+  background: #fafafa;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.question-text {
+  font-size: 36px;
+  font-weight: 500;
+  color: #333;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* 提示文字 */
+.tap-hint {
+  margin-top: 30px;
+  font-size: 16px;
+  color: #bbb;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* 卡片下半部分：答案区 (动画展开) */
+.card-answer {
+  max-height: 0; /* 默认隐藏 */
+  opacity: 0;
+  overflow: hidden;
+  background: #fff;
+  transition: max-height 0.5s ease-out, opacity 0.3s ease-in;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 展开状态 */
+.review-card.expanded .card-answer {
+  max-height: 500px; /* 足够大的高度 */
+  opacity: 1;
+  padding: 40px;
+  border-top: 2px dashed #e8e8e8;
+}
+
+/* 答案内容样式 */
+.answer-translation {
+  font-size: 28px;
+  color: #666;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.answer-word-info {
+  background: #f0f7ff;
+  padding: 20px 40px;
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 30px;
+  width: 100%;
+}
+
+.answer-word {
+  font-size: 32px;
+  font-weight: bold;
+  color: #1890ff;
+  margin-bottom: 8px;
+}
+
+.answer-meaning {
+  font-size: 24px;
+  color: #555;
+}
+
+/* 底部操作按钮 */
+.action-area {
+  margin-top: 40px;
+  display: flex;
+  gap: 30px;
+}
+
+.big-btn {
+  height: 60px !important;
+  font-size: 22px !important;
+  padding: 0 40px !important;
+  border-radius: 30px !important;
+}
+/* === 声音按钮样式 === */
+.sound-btn {
+  margin-top: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid #e6f7ff;
+  background: #fff;
+  color: #1890ff;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+}
+
+.sound-btn:hover {
+  background: #1890ff;
+  color: #fff;
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(24, 144, 255, 0.3);
+}
+
+.sound-btn:active {
+  transform: scale(0.95);
+}
+
+/* 正在播放时的动画效果 */
+.sound-btn.playing {
+  animation: pulse 1.5s infinite;
+  background: #e6f7ff;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(24, 144, 255, 0.4); }
+  70% { box-shadow: 0 0 0 15px rgba(24, 144, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(24, 144, 255, 0); }
+}
