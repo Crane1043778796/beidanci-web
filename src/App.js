@@ -38,6 +38,7 @@ const { Header, Content } = Layout;
 
 // --- 全局辅助函数 ---
 
+// 防抖函数：防止搜索过于频繁
 const debounce = (func, wait) => {
   let timeout;
   return function (...args) {
@@ -47,6 +48,7 @@ const debounce = (func, wait) => {
   };
 };
 
+// 高亮 Markdown 语法 (*text*) -> HTML
 const highlightText = (str) => {
   if (!str) return '';
   return str.replace(
@@ -55,7 +57,9 @@ const highlightText = (str) => {
   );
 };
 
-// --- App 主组件 ---
+// ============================================================================
+// === App 主组件 ===
+// ============================================================================
 const App = () => {
   const [currentUser, setCurrentUser] = useState(localStorage.getItem('username') || null);
   const [view, setView] = useState('list'); 
@@ -172,9 +176,9 @@ const App = () => {
   );
 };
 
-// =======================
-// === 核心组件：背诵模式 (含语音优化) ===
-// =======================
+// ============================================================================
+// === 核心组件：背诵模式 (含语音) ===
+// ============================================================================
 function ReviewMode() {
   const [reviewQueue, setReviewQueue] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -183,7 +187,7 @@ function ReviewMode() {
   const [finished, setFinished] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false); 
 
-  // === 语音合成 (已优化：过滤括号读音) ===
+  // === 语音合成 ===
   const speak = useCallback((text) => {
     if (!text) return;
     
@@ -191,14 +195,12 @@ function ReviewMode() {
 
     // 1. 去掉 Markdown 加粗符号 (*)
     let cleanText = text.replace(/\*/g, '');
-    
-    // 2. 关键修改：去掉括号及其内部内容 (包括全角（）和半角()) 
-    // 例如：口元（くちもと） -> 口元
+    // 2. 去掉括号及内容 (e.g. 口元（くちもと） -> 口元)
     cleanText = cleanText.replace(/[\(（].*?[\)）]/g, '');
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     
-    // 3. 语言检测
+    // 3. 语言检测：优先日语
     if (/[\u3040-\u30ff\u31f0-\u31ff\u4e00-\u9fa5]/.test(cleanText)) {
       utterance.lang = 'ja-JP'; 
     } else {
@@ -217,9 +219,10 @@ function ReviewMode() {
     setLoading(true);
     try {
       const res = await request.get('/words/');
+      // 筛选逻辑：有复习记录 且 有例句
       const list = res
         .filter(item => item.events.length > 0 && item.sentenceMarkdown)
-        .sort((a, b) => b.events.length - a.events.length);
+        .sort((a, b) => b.events.length - a.events.length); // 次数多的优先(或少的优先，根据需求)
       
       setReviewQueue(list);
       setFinished(false);
@@ -235,9 +238,11 @@ function ReviewMode() {
     fetchAndPrepare();
   }, []);
 
+  // 自动播放逻辑
   useEffect(() => {
     if (!loading && !finished && reviewQueue.length > 0) {
       const item = reviewQueue[currentIndex];
+      // 获取最新例句
       const allGroups = (item.sentenceMarkdown || '').split('\n\n---\n\n');
       const latestGroup = allGroups[allGroups.length - 1];
       const lines = latestGroup.split('\n');
@@ -376,13 +381,14 @@ function ReviewMode() {
   );
 }
 
-// =======================
+// ============================================================================
 // === 列表管理组件 (SearchPage) ===
-// =======================
+// ============================================================================
 function SearchPage() {
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState('recent');
   
+  // 使用 ref 追踪 activeTab
   const activeTabRef = useRef(activeTab);
   activeTabRef.current = activeTab;
 
@@ -398,6 +404,7 @@ function SearchPage() {
   
   const sentenceInputRef = useRef(null);
 
+  // --- 辅助函数 ---
   const now = Date.now();
   const withinDays = (item, days) =>
     item.events.filter((ts) => now - new Date(ts).getTime() <= days * 24 * 60 * 60 * 1000).length;
@@ -454,6 +461,7 @@ function SearchPage() {
         return countByTab(b) - countByTab(a);
     });
 
+  // --- 表格列 ---
   const [columns, setColumns] = useState([
     {
       title: '次数',
@@ -485,6 +493,7 @@ function SearchPage() {
       key: 'sentenceMarkdown',
       render: (text) => {
         if (!text) return null;
+        // 列表仅显示最新的一条例句
         const allGroups = text.split('\n\n---\n\n');
         const latestGroup = allGroups[allGroups.length - 1];
         const parts = latestGroup.split('\n');
@@ -705,9 +714,9 @@ function SearchPage() {
     }
   };
 
-  // 4. 监听鼠标选词 (空函数，不自动填入)
+  // 4. 监听鼠标选词 (禁用自动填入，防止误触)
   const handleSentenceSelect = (e) => {
-    // 禁用自动填入，防止误触
+    // 空函数
   };
 
   const openAddModal = () => {
@@ -854,8 +863,7 @@ function SearchPage() {
               <Space>
                 <span style={{fontSize: 18, fontWeight: 'bold'}}>1. 先写例句</span>
                 <Tag color="blue">Enter 翻译</Tag>
-                <Tag color="green">选译文填空</Tag>
-                <Tag color="volcano">Ctrl+B 填词/义</Tag>
+                <Tag color="volcano">Ctrl+B 加粗/查词/查义</Tag>
                 {translatingSentence && <Spin indicator={<LoadingOutlined />} />}
               </Space>
             }
@@ -874,7 +882,7 @@ function SearchPage() {
           <div style={{ display: 'flex', gap: 24 }}>
             <Form.Item 
               name="word" 
-              label="2. 单词 (原文 Ctrl+B 自动填)" 
+              label="2. 单词 (第一行 Ctrl+B)" 
               style={{ flex: 1 }}
               rules={[{ required: true }]}
             >
@@ -883,7 +891,7 @@ function SearchPage() {
 
             <Form.Item 
               name="meaning" 
-              label="3. 意思 (译文 Ctrl+B 自动填)"
+              label="3. 意思 (第二行 Ctrl+B)"
               style={{ flex: 1.5 }}
               rules={[{ required: true }]}
             >
