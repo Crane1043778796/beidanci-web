@@ -173,7 +173,7 @@ const App = () => {
 };
 
 // =======================
-// === 核心组件：背诵模式 ===
+// === 核心组件：背诵模式 (含语音优化) ===
 // =======================
 function ReviewMode() {
   const [reviewQueue, setReviewQueue] = useState([]);
@@ -183,15 +183,22 @@ function ReviewMode() {
   const [finished, setFinished] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false); 
 
-  // === 语音合成 ===
+  // === 语音合成 (已优化：过滤括号读音) ===
   const speak = useCallback((text) => {
     if (!text) return;
     
     window.speechSynthesis.cancel();
 
-    const cleanText = text.replace(/\*/g, '');
+    // 1. 去掉 Markdown 加粗符号 (*)
+    let cleanText = text.replace(/\*/g, '');
+    
+    // 2. 关键修改：去掉括号及其内部内容 (包括全角（）和半角()) 
+    // 例如：口元（くちもと） -> 口元
+    cleanText = cleanText.replace(/[\(（].*?[\)）]/g, '');
+
     const utterance = new SpeechSynthesisUtterance(cleanText);
     
+    // 3. 语言检测
     if (/[\u3040-\u30ff\u31f0-\u31ff\u4e00-\u9fa5]/.test(cleanText)) {
       utterance.lang = 'ja-JP'; 
     } else {
@@ -386,6 +393,7 @@ function SearchPage() {
   const [addMode, setAddMode] = useState('word');
   const [form] = Form.useForm();
   
+  const [fetchingMeaning, setFetchingMeaning] = useState(false);
   const [translatingSentence, setTranslatingSentence] = useState(false);
   
   const sentenceInputRef = useRef(null);
@@ -529,13 +537,21 @@ function SearchPage() {
                 await request.patch(`/words/${item.id}/`, { events: newEvents });
                 message.success('-1');
                 fetchList();
-              } catch (e) { }
+              } catch (err) { }
             }}
           >
             -1
           </Button>
 
-          <Button size="large" onClick={(e) => { e.stopPropagation(); handlePlusOne(item); }}>+1</Button>
+          <Button 
+            size="large" 
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              handlePlusOne(item); 
+            }}
+          >
+            +1
+          </Button>
 
           <Button
             size="large"
@@ -564,7 +580,7 @@ function SearchPage() {
                 await request.delete(`/words/${item.id}/`);
                 message.success('删');
                 fetchList();
-              } catch (e) { }
+              } catch (err) { }
             }}
           >
             删
@@ -640,7 +656,7 @@ function SearchPage() {
     finally { setTranslatingSentence(false); }
   };
 
-  // 3. 监听键盘
+  // 3. 监听键盘 (Ctrl+B 核心逻辑)
   const handleSentenceKeyDown = (e) => {
     // 回车 -> 翻译
     if (e.key === 'Enter') {
@@ -657,7 +673,7 @@ function SearchPage() {
         translateSentence(lastLine);
       }
     }
-    // Ctrl+B -> 加粗 + 填词 + 查原型
+    // Ctrl+B -> 加粗 + 填框 (根据行号判断填哪里)
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
       e.preventDefault();
       const textArea = e.target;
@@ -671,39 +687,27 @@ function SearchPage() {
       }
 
       const selectedText = value.substring(start, end);
-      
-      // 1. 修改例句加粗
+      const firstNewLineIndex = value.indexOf('\n');
+
+      // 1. 无论哪行，先给句子加粗
       const newValue = value.substring(0, start) + `*${selectedText}*` + value.substring(end);
       form.setFieldsValue({ sentenceMarkdown: newValue });
 
-      // 2. 填入单词框
-      form.setFieldsValue({ word: selectedText });
-
-      // 3. 查原型 (如果有变形)
-      fetchRootWord(selectedText);
-    }
-  };
-
-  // 4. 监听鼠标选词 (只填空，不查词)
-  const handleSentenceSelect = (e) => {
-    const textArea = e.target;
-    const start = textArea.selectionStart;
-    const end = textArea.selectionEnd;
-    const value = textArea.value;
-    
-    if (start !== end) {
-      const selectedText = value.substring(start, end);
-      const firstNewLineIndex = value.indexOf('\n');
-
-      // 选中第一行 -> 填单词框 (手动)
+      // 2. 判断行号
       if (firstNewLineIndex === -1 || end <= firstNewLineIndex) {
+        // 第一行 (原文) -> 填单词框 + 查原型
         form.setFieldsValue({ word: selectedText });
-      } 
-      // 选中第二行 -> 填意思框 (手动)
-      else if (start > firstNewLineIndex) {
+        fetchRootWord(selectedText);
+      } else if (start > firstNewLineIndex) {
+        // 第二行 (译文) -> 填意思框
         form.setFieldsValue({ meaning: selectedText });
       }
     }
+  };
+
+  // 4. 监听鼠标选词 (空函数，不自动填入)
+  const handleSentenceSelect = (e) => {
+    // 禁用自动填入，防止误触
   };
 
   const openAddModal = () => {
@@ -850,8 +854,8 @@ function SearchPage() {
               <Space>
                 <span style={{fontSize: 18, fontWeight: 'bold'}}>1. 先写例句</span>
                 <Tag color="blue">Enter 翻译</Tag>
-                <Tag color="green">鼠标选词 → 填空</Tag>
-                <Tag color="volcano">Ctrl+B → 加粗并查原型</Tag>
+                <Tag color="green">选译文填空</Tag>
+                <Tag color="volcano">Ctrl+B 填词/义</Tag>
                 {translatingSentence && <Spin indicator={<LoadingOutlined />} />}
               </Space>
             }
@@ -862,7 +866,7 @@ function SearchPage() {
               onKeyDown={handleSentenceKeyDown} 
               onSelect={handleSentenceSelect}   
               rows={3} 
-              placeholder="例如：昼過ぎだったんだ。(写完按回车，然后用鼠标选中 '昼過ぎ')" 
+              placeholder="例如：昼過ぎだったんだ。(写完按回车，选中文字按 Ctrl+B)" 
               style={{ fontSize: '20px', lineHeight: '1.6' }}
             />
           </Form.Item>
@@ -870,7 +874,7 @@ function SearchPage() {
           <div style={{ display: 'flex', gap: 24 }}>
             <Form.Item 
               name="word" 
-              label="2. 单词 (选中第一行自动填)" 
+              label="2. 单词 (原文 Ctrl+B 自动填)" 
               style={{ flex: 1 }}
               rules={[{ required: true }]}
             >
@@ -879,7 +883,7 @@ function SearchPage() {
 
             <Form.Item 
               name="meaning" 
-              label="3. 意思 (选中第二行自动填)"
+              label="3. 意思 (译文 Ctrl+B 自动填)"
               style={{ flex: 1.5 }}
               rules={[{ required: true }]}
             >
